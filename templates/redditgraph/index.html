@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style type="text/css">
+input.submit {
+    margin: 0 auto;
+    margin-top: 8px;
+}
+#main-content{
+    background: none;
+    box-shadow: none;
+    margin: 0 auto;
+    padding: 0px;
+}
+circle.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+line.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+	<div class='gallery' id='chart'> </div>
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript" src="/media/js/d3.v2.js"></script>
+	<script type="text/javascript" src="/media/js/redditgraph/index.js"></script>
+{% endblock %}
