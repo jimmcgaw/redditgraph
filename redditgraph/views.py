@@ -17,7 +17,8 @@ from redditgraph_site.redditgraph.model_forms import *
 import simplejson
 import random
 import networkx as nx
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+
 
 def index(request, template_name="redditgraph/index.html"):
             
