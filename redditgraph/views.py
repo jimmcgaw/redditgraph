@@ -14,22 +14,28 @@ from django.views.decorators.csrf import csrf_exempt
 from redditgraph_site.redditgraph.models import *
 from redditgraph_site.redditgraph.model_forms import *
 
-from celery.decorators import task
 import simplejson
 import random
 import networkx as nx
+import matplotlib.pyplot as plt
 
 def index(request, template_name="redditgraph/index.html"):
             
     return render(request, template_name, locals())
 
 def graph_json(request):
+    data = build_data()
+    #data, graph = get_graph_and_data()
     
+    json = simplejson.dumps(data)
+    return HttpResponse(json, content_type="application/json")
+    
+def get_graph_and_data():
     data = {}
     data['nodes'] = []
     data['links'] = []
     
-    reddit_users = RedditUser.objects.all()[0:50]
+    reddit_users = RedditUser.objects.all()[0:10]
     graph = nx.Graph()
     
     for user in reddit_users:
@@ -48,14 +54,51 @@ def graph_json(request):
         target_index = nodes.index(edge[1])
         data['links'].append({'source': source_index, 'target': target_index})
         
-    
-    
-    json = simplejson.dumps(data)
-    return HttpResponse(json, content_type="application/json")
-    
+    return data, graph
 
-
-
+def build_graph():
+    graph = nx.Graph()
+    
+    user_edges = UserEdge.objects.all()[0:200]
+    usernames = []
+    for user_edge in user_edges:
+        graph.add_node(user_edge.to_user)
+        graph.add_node(user_edge.from_user)
+        
+    usernames = list(set(usernames))
+    [graph.add_node(username) for username in usernames]
+    
+    nodes = graph.nodes()
+    for user_edge in user_edges:
+        try:
+            to_index = nodes.index(user_edge.to_user)
+            from_index = nodes.index(user_edge.from_user)
+            graph.add_edge(to_index, from_index)
+        except:
+            pass
+    
+    return graph
+    
+def build_data():
+    data = {}
+    data['nodes'] = []
+    data['links'] = []
+    graph = build_graph()
+    
+    for node in graph.nodes():
+        node_data = {}
+        node_data['name'] = node
+        node_data['group'] = 1
+        data['nodes'].append(node_data)
+        
+    for edge in graph.edges():
+        print "Loading data for edge with %s & %s " % (edge[0], edge[1])
+        link_data = {}
+        link_data['source'] = edge[0]
+        link_data['target'] = edge[1]
+        data['links'].append(link_data)
+        
+    return data
 
 
 

@@ -49,10 +49,18 @@ RedditGraph.loadGraph = function(){
       node.attr("cx", function(d) { return d.x; })
           .attr("cy", function(d) { return d.y; });
     });
+    
+    jQuery("#loading").toggleClass("hidden");
   });
+  
+  
+  
+  
   
 };
 
 jQuery(document).ready(function(){
   RedditGraph.loadGraph();
+  
+  
 });
