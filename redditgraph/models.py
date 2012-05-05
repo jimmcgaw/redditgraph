@@ -38,6 +38,25 @@ class RedditUser(models.Model):
         users = [user for user in users if user != self]
         return users
         
+    def get_similar_users_sql(self):
+        sql = """ 
+        SELECT DISTINCT ru2.username FROM redditgraph_reddituser ru1  
+        INNER JOIN redditgraph_redditvote rv1 ON ru1.id = rv1.user_id  
+        INNER JOIN redditgraph_redditlink rl1 ON rv1.link_id = rl1.id  
+        INNER JOIN redditgraph_redditvote rv2 ON rl1.id = rv2.link_id  
+        INNER JOIN redditgraph_reddituser ru2 ON rv2.user_id = ru2.id  
+        WHERE rv1.is_upvote = 1 AND rv2.is_upvote = 1 AND ru1.username <> ru2.username AND ru1.username='%s';
+        """ % self.username
+        
+        from django.db import connection, transaction
+        cursor = connection.cursor()
+        #print sql
+        cursor.execute(sql)
+        usernames = cursor.fetchall()
+        usernames = [username[0] for username in usernames]
+        return usernames
+        
+        
     def get_recommended_links(self):
         """ 'Users who upvoted links you upvoted also upvoted....' """
         similar_users = self.get_similar_users()
@@ -66,3 +85,26 @@ class RedditVote(models.Model):
     def __unicode__(self):
         direction = u"Up" if self.is_upvote else u"Down"
         return u"Vote %s by %s for %s" % (direction, self.user.username, self.link.link_id)
+        
+        
+class UserEdge(models.Model):
+    to_user = models.CharField(max_length=100)
+    from_user = models.CharField(max_length=100)
+    
+        
+"""
+SELECT ru1.username, rv1.is_upvote, rl1.link_id FROM redditgraph_reddituser ru1 
+INNER JOIN redditgraph_redditvote rv1 ON ru1.id = rv1.user_id 
+INNER JOIN redditgraph_redditlink rl1 ON rv1.link_id = rl1.id
+INNER JOIN redditgraph_redditvote rv2 ON rl1.id = rv2.link_id
+INNER JOIN redditgraph_reddituser ru2 ON rv2.user_id = ru2.id LIMIT 10;
+
+
+
+SELECT DISTINCT ru2.username FROM redditgraph_reddituser ru1 
+INNER JOIN redditgraph_redditvote rv1 ON ru1.id = rv1.user_id 
+INNER JOIN redditgraph_redditlink rl1 ON rv1.link_id = rl1.id 
+INNER JOIN redditgraph_redditvote rv2 ON rl1.id = rv2.link_id 
+INNER JOIN redditgraph_reddituser ru2 ON rv2.user_id = ru2.id 
+WHERE rv1.is_upvote = 1 AND rv2.is_upvote = 1 AND ru1.username <> ru2.username AND ru1.username='adoit90';
+"""
