@@ -29,7 +29,7 @@ def graph_json(request):
     data['nodes'] = []
     data['links'] = []
     
-    reddit_users = RedditUser.objects.all()[0:50]
+    reddit_users = RedditUser.objects.all()[0:30]
     graph = nx.Graph()
     
     for user in reddit_users:
