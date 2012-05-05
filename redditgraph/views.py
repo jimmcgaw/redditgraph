@@ -59,7 +59,7 @@ def get_graph_and_data():
 def build_graph():
     graph = nx.Graph()
     
-    user_edges = UserEdge.objects.all()[0:200]
+    user_edges = UserEdge.objects.all()[0:500]
     usernames = []
     for user_edge in user_edges:
         graph.add_node(user_edge.to_user)
@@ -76,6 +76,11 @@ def build_graph():
             graph.add_edge(to_index, from_index)
         except:
             pass
+            
+    nodes = graph.nodes()
+    for node in nodes:
+        if not graph.neighbors(node):
+            graph.remove_node(node)
     
     return graph
     
