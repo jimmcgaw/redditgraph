@@ -10,6 +10,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404, render
 from django.template import loader, RequestContext
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator, EmptyPage, InvalidPage
 
 from redditgraph_site.redditgraph.models import *
 from redditgraph_site.redditgraph.model_forms import *
@@ -21,8 +22,38 @@ import networkx as nx
 
 
 def index(request, template_name="redditgraph/index.html"):
-            
     return render(request, template_name, locals())
+    
+
+def recommended(request, template_name="redditgraph/recommended.html"):
+    reddit_users = RedditUser.objects.all()
+    paginator = Paginator(reddit_users, 50)
+    try:
+        page = int(request.GET.get('page', '1'))
+    except ValueError:
+        page = 1
+    try:
+        reddit_users = paginator.page(page)
+    except (InvalidPage, EmptyPage):
+        reddit_users = paginator.page(paginator.num_pages)
+        
+    return render(request, template_name, locals())
+    
+    
+    
+def get_recommended_links(request, username):
+    reddit_user = get_object_or_404(RedditUser, username=username)
+    data = {}
+    data['links'] = list()
+    recommended_links = reddit_user.get_recommended_links_sql()
+    for link in recommended_links:
+        print "Loading link %s" % link
+        data['links'].append(link)
+        
+    json = simplejson.dumps(data)
+    return HttpResponse(json, content_type="application/json")
+    
+    
 
 def graph_json(request):
     data = build_data()
@@ -58,9 +89,9 @@ def get_graph_and_data():
     return data, graph
 
 def build_graph():
-    graph = nx.Graph()
+    graph = nx.DiGraph()
     
-    user_edges = UserEdge.objects.all()[0:500]
+    user_edges = UserEdge.objects.all()[0:1000]
     usernames = []
     for user_edge in user_edges:
         graph.add_node(user_edge.to_user)
@@ -78,10 +109,10 @@ def build_graph():
         except:
             pass
             
-    nodes = graph.nodes()
-    for node in nodes:
-        if not graph.neighbors(node):
-            graph.remove_node(node)
+    #nodes = graph.nodes()
+    #for node in nodes:
+    #    if not graph.neighbors(node):
+    #        graph.remove_node(node)
     
     return graph
     

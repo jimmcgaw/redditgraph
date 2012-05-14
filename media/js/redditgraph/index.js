@@ -3,8 +3,8 @@ var RedditGraph = RedditGraph || {};
 // the magical code for this comes from: http://dygraphs.com/
 
 RedditGraph.loadGraph = function(){
-  var width = 960,
-      height = 1000;
+  var width = 2000,
+      height = 3000;
 
   var color = d3.scale.category20();
 

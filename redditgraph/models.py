@@ -64,6 +64,26 @@ class RedditUser(models.Model):
         recommended_links = RedditLink.objects.filter(redditvote__user__in=similar_users).exclude(id__in=user_link_ids).distinct()
         return recommended_links
         
+    def get_recommended_links_sql(self):
+        sql = """ 
+        SELECT DISTINCT rl2.link_id FROM redditgraph_reddituser ru1  
+        INNER JOIN redditgraph_redditvote rv1 ON ru1.id = rv1.user_id  
+        INNER JOIN redditgraph_redditlink rl1 ON rv1.link_id = rl1.id  
+        INNER JOIN redditgraph_redditvote rv2 ON rl1.id = rv2.link_id  
+        INNER JOIN redditgraph_reddituser ru2 ON rv2.user_id = ru2.id  
+        INNER JOIN redditgraph_redditvote rv3 ON ru2.id = rv3.user_id
+        INNER JOIN redditgraph_redditlink rl2 ON rv3.link_id = rl2.id
+        WHERE rv1.is_upvote = 1 AND rv2.is_upvote = 1 AND rv3.is_upvote = 1 AND ru1.username <> ru2.username AND ru1.username='%s' LIMIT 20;
+        """ % self.username
+        
+        from django.db import connection, transaction
+        cursor = connection.cursor()
+        #print sql
+        cursor.execute(sql)
+        usernames = cursor.fetchall()
+        usernames = [username[0] for username in usernames]
+        return usernames
+        
     def __unicode__(self):
         return self.username
     
